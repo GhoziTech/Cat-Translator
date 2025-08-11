@@ -2,41 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Cat Translation Website Design System - Pastel & Cute */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 340 50% 98%;
+    --foreground: 340 15% 25%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 340 40% 96%;
+    --card-foreground: 340 20% 20%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 340 45% 97%;
+    --popover-foreground: 340 20% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 320 65% 75%;
+    --primary-foreground: 340 5% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 280 55% 85%;
+    --secondary-foreground: 280 25% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --success: 150 60% 75%;
+    --success-foreground: 150 30% 25%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --cute-pink: 320 70% 80%;
+    --cute-purple: 280 60% 80%;
+    --cute-mint: 150 50% 85%;
+    --cute-cream: 45 80% 95%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: 340 30% 92%;
+    --muted-foreground: 340 15% 50%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --accent: 280 50% 88%;
+    --accent-foreground: 280 30% 25%;
 
-    --radius: 0.5rem;
+    --destructive: 0 70% 70%;
+    --destructive-foreground: 0 5% 98%;
+
+    --border: 340 25% 88%;
+    --input: 340 35% 94%;
+    --ring: 320 60% 70%;
+
+    --gradient-cat: linear-gradient(135deg, hsl(var(--cute-pink)), hsl(var(--cute-purple)));
+    --gradient-soft: linear-gradient(180deg, hsl(var(--cute-cream)), hsl(var(--muted)));
+    --shadow-cute: 0 8px 32px -8px hsl(var(--cute-pink) / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--cute-purple) / 0.2);
+
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,41 +67,46 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 340 20% 8%;
+    --foreground: 340 30% 90%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 340 25% 12%;
+    --card-foreground: 340 25% 88%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 340 25% 10%;
+    --popover-foreground: 340 25% 85%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 320 50% 60%;
+    --primary-foreground: 340 10% 95%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 280 40% 20%;
+    --secondary-foreground: 280 15% 85%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --success: 150 40% 50%;
+    --success-foreground: 150 15% 90%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --cute-pink: 320 45% 50%;
+    --cute-purple: 280 40% 55%;
+    --cute-mint: 150 35% 60%;
+    --cute-cream: 45 30% 20%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: 340 15% 18%;
+    --muted-foreground: 340 15% 65%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --accent: 280 30% 25%;
+    --accent-foreground: 280 20% 85%;
+
+    --destructive: 0 50% 50%;
+    --destructive-foreground: 0 10% 95%;
+
+    --border: 340 20% 20%;
+    --input: 340 20% 15%;
+    --ring: 320 40% 60%;
+
+    --gradient-cat: linear-gradient(135deg, hsl(var(--cute-pink)), hsl(var(--cute-purple)));
+    --gradient-soft: linear-gradient(180deg, hsl(var(--cute-cream)), hsl(var(--muted)));
+    --shadow-cute: 0 8px 32px -8px hsl(var(--cute-pink) / 0.4);
+    --shadow-glow: 0 0 40px hsl(var(--cute-purple) / 0.3);
   }
 }
 
