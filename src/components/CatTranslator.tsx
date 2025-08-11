@@ -1,11 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Mic, Upload, Share, Copy, Heart } from 'lucide-react';
+import { motion } from 'framer-motion';
 import heroImage from '@/assets/hero-cat.png';
 import catIcon from '@/assets/cat-icon.png';
+import { useAudioValidation } from '@/hooks/useAudioValidation';
+import { useTranslationCache } from '@/hooks/useTranslationCache';
+import { useDonationSystem } from '@/hooks/useDonationSystem';
+import LoadingAnimation from '@/components/LoadingAnimation';
+import TypewriterText from '@/components/TypewriterText';
+import DonationModal from '@/components/DonationModal';
+import ErrorDisplay from '@/components/ErrorDisplay';
+import SuccessAnimation from '@/components/SuccessAnimation';
 
 type TranslationStyle = 'sarcastic' | 'romantic' | 'aggressive';
 
@@ -20,10 +29,30 @@ const CatTranslator = () => {
   const [translationStyle, setTranslationStyle] = useState<TranslationStyle>('sarcastic');
   const [result, setResult] = useState<TranslationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<'api_limit' | 'audio_corrupt' | 'general' | null>(null);
+  const [showTypewriter, setShowTypewriter] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  
   const { toast } = useToast();
+  const { validateAudioDuration, MAX_DURATION } = useAudioValidation();
+  const { getCachedTranslation, setCachedTranslation, clearExpiredCache } = useTranslationCache();
+  const { 
+    usageCount, 
+    showDonation, 
+    donationMessage, 
+    incrementUsage, 
+    hideDonation, 
+    openDonationLink 
+  } = useDonationSystem();
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    clearExpiredCache();
+  }, [clearExpiredCache]);
 
   const styleLabels = {
     sarcastic: 'Sarkastik 😼',
@@ -50,6 +79,17 @@ const CatTranslator = () => {
 
       mediaRecorder.start();
       setIsRecording(true);
+      setError(null);
+      
+      // Auto-stop after MAX_DURATION seconds
+      recordingTimeoutRef.current = setTimeout(() => {
+        handleStopRecording();
+        toast({ 
+          title: "⏰ Rekaman Dihentikan", 
+          description: `Rekaman otomatis berhenti setelah ${MAX_DURATION} detik` 
+        });
+      }, MAX_DURATION * 1000);
+      
       toast({ title: "🎤 Merekam...", description: "Katakan sesuatu untuk kucing!" });
     } catch (error) {
       toast({ 
@@ -64,6 +104,11 @@ const CatTranslator = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+      }
     }
   };
 
@@ -81,10 +126,42 @@ const CatTranslator = () => {
   };
 
   const processAudio = async (audioBlob: Blob) => {
-    setIsLoading(true);
+    // Validate audio duration first
+    const isValidDuration = await validateAudioDuration(audioBlob);
+    if (!isValidDuration) return;
     
-    // Simulated API calls - replace with real API integration
+    setIsLoading(true);
+    setError(null);
+    setResult(null);
+    
     try {
+      // Check cache first
+      const cachedTranslation = await getCachedTranslation(audioBlob);
+      if (cachedTranslation) {
+        setResult({
+          originalText: "Meong meong nyaa (dari cache)",
+          translatedText: cachedTranslation,
+          style: translationStyle
+        });
+        setShowTypewriter(true);
+        incrementUsage();
+        toast({ 
+          title: "⚡ Dari Cache!", 
+          description: "Terjemahan ditemukan di cache" 
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Simulated API calls - replace with real API integration
+      // Simulate random errors for demonstration
+      const randomError = Math.random();
+      if (randomError < 0.1) {
+        throw new Error('api_limit');
+      } else if (randomError < 0.15) {
+        throw new Error('audio_corrupt');
+      }
+      
       // Simulated Whisper API call
       const mockTranscription = "Meong meong nyaa";
       
@@ -98,25 +175,45 @@ const CatTranslator = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      const translation = mockTranslations[translationStyle];
+      
+      // Cache the result
+      await setCachedTranslation(audioBlob, translation);
+      
       setResult({
         originalText: mockTranscription,
-        translatedText: mockTranslations[translationStyle],
+        translatedText: translation,
         style: translationStyle
       });
+      
+      setShowTypewriter(true);
+      incrementUsage();
 
       toast({ 
         title: "✨ Terjemahan Selesai!", 
         description: "Kucing telah berbicara!" 
       });
     } catch (error) {
-      toast({ 
-        title: "❌ Error", 
-        description: "Gagal memproses audio",
-        variant: "destructive" 
-      });
+      const errorMessage = error instanceof Error ? error.message : 'general';
+      if (errorMessage === 'api_limit') {
+        setError('api_limit');
+      } else if (errorMessage === 'audio_corrupt') {
+        setError('audio_corrupt');
+      } else {
+        setError('general');
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    // You could re-trigger the last audio processing here
+  };
+
+  const handleDonationSuccess = () => {
+    setShowSuccessAnimation(true);
   };
 
   const handleShare = (platform: 'twitter' | 'whatsapp') => {
@@ -181,18 +278,33 @@ const CatTranslator = () => {
 
         {/* Recording Controls */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Button
-            variant={isRecording ? "destructive" : "record"}
-            size="record"
-            onClick={isRecording ? handleStopRecording : handleStartRecording}
-            disabled={isLoading}
-            className="relative"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Mic className={`w-8 h-8 ${isRecording ? 'animate-pulse' : ''}`} />
-            {isRecording && (
-              <div className="absolute inset-0 rounded-full border-4 border-white animate-ping" />
-            )}
-          </Button>
+            <Button
+              variant={isRecording ? "destructive" : "record"}
+              size="record"
+              onClick={isRecording ? handleStopRecording : handleStartRecording}
+              disabled={isLoading}
+              className="relative group"
+            >
+              <Mic className={`w-8 h-8 ${isRecording ? 'animate-pulse' : ''}`} />
+              {isRecording && (
+                <div className="absolute inset-0 rounded-full border-4 border-white animate-ping" />
+              )}
+              {/* Claw effect on hover */}
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="absolute top-2 left-2 text-white text-lg">🐾</div>
+                <div className="absolute bottom-2 right-2 text-white text-lg">🐾</div>
+              </motion.div>
+            </Button>
+          </motion.div>
 
           <div className="flex flex-col items-center gap-2">
             <Button
@@ -217,13 +329,15 @@ const CatTranslator = () => {
         {/* Loading State */}
         {isLoading && (
           <Card className="w-full max-w-lg shadow-cute">
-            <CardContent className="py-8">
-              <div className="text-center">
-                <div className="animate-spin text-4xl mb-4">🐱</div>
-                <p className="text-cute-purple font-medium">Kucing sedang berpikir...</p>
-              </div>
+            <CardContent>
+              <LoadingAnimation />
             </CardContent>
           </Card>
+        )}
+
+        {/* Error Display */}
+        {error && !isLoading && (
+          <ErrorDisplay type={error} onRetry={handleRetry} />
         )}
 
         {/* Translation Result */}
@@ -242,7 +356,16 @@ const CatTranslator = () => {
               
               <div className="p-4 bg-gradient-cat text-white rounded-lg">
                 <p className="text-sm opacity-90 mb-2">Terjemahan:</p>
-                <p className="font-medium">"{result.translatedText}"</p>
+                <p className="font-medium">
+                  "{showTypewriter ? (
+                    <TypewriterText 
+                      text={result.translatedText} 
+                      onComplete={() => setShowTypewriter(false)}
+                    />
+                  ) : (
+                    result.translatedText
+                  )}"
+                </p>
               </div>
 
               {/* Share Buttons */}
@@ -283,7 +406,27 @@ const CatTranslator = () => {
           Dibuat dengan <Heart className="w-4 h-4 text-cute-pink" /> oleh 
           <span className="font-semibold text-cute-purple">GhoziTech</span>
         </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Penggunaan: {usageCount} kali
+        </p>
       </footer>
+
+      {/* Donation Modal */}
+      <DonationModal
+        isOpen={showDonation}
+        message={donationMessage}
+        onClose={hideDonation}
+        onDonate={() => {
+          handleDonationSuccess();
+          openDonationLink();
+        }}
+      />
+
+      {/* Success Animation */}
+      <SuccessAnimation
+        show={showSuccessAnimation}
+        onComplete={() => setShowSuccessAnimation(false)}
+      />
     </div>
   );
 };
